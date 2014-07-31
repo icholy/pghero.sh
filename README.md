@@ -1,47 +1,43 @@
-# PGHERO.sh
+# pghero.sh
 
 > Shell script wrapper for [PgHero](https://github.com/ankane/pghero)
 
 ```
-COMMANDS:
+$ pghero help
 
-  query
-    - all      (View all running queries)
-    - long     (Queries running for longer than five minutes)
-    - kill     (Kill query by pid)
-    - killall  (Kill all queries)
+USAGE:
 
-  index
-    - info     (Show general usage)
-    - missing  (Missing indexes)
-    - unused   (Unused indexed)
-
-  space        (Show largest tables and indexes)
-
-  cache
+  pghero [COMMAND] [SUBCOMMAND] [PSQL OPTIONS]... 
 
 COMMANDS:
 
-  query
-    - all      (View all running queries)
-    - long     (Queries running for longer than five minutes)
-    - kill     (Kill query by pid)
-    - killall  (Kill all queries)
+  help      - Show this help text
+  space     - Show largest tables and indexes
+  install   - Install pghero
+  uninstall - Uninstall pghero
 
-  index
-    - info     (Show general usage)
-    - missing  (Missing indexes)
-    - unused   (Unused indexed)
+  query:
+    all     - View all running queries
+    long    - Queries running for longer than five minutes
+    kill    - Kill query by pid
+    killall - Kill all queries
 
-  space        (Show largest tables and indexes)
+  index:
+    usage   - Show general usage
+    missing - Missing indexes
+    unused  - Unused indexed
 
-  cache
-    - index    (Index hit rate)
-    - table    (Table hit rate)
-
-  install      (Install pghero)
-  uninstall    (Uninstall pghero)
+  cache:
+    index   - Index hit rate
+    table   - Table hit rate
 
 Note: all additional parameters are passed on to psql
+
+EXAMPLES:
+
+  > pghero install -W
+  > pghero query all
+  > pghero space -d <database> -U <user>
+
 ```
 

@@ -1,32 +1,47 @@
 #!/bin/sh
 
 sub_help () {
-
+  echo
+  echo "USAGE:"
+  echo
+  echo "  pghero [COMMAND] [SUBCOMMAND] [PSQL OPTIONS]... "
   echo
   echo "COMMANDS:"
+  echo 
+  echo "  help      - Show this help text"
+  echo "  space     - Show largest tables and indexes"
+  echo "  install   - Install pghero"
+  echo "  uninstall - Uninstall pghero"
   echo
-  echo "  query"
-  echo "    - all      (View all running queries)"
-  echo "    - long     (Queries running for longer than five minutes)"
-  echo "    - kill     (Kill query by pid)"
-  echo "    - killall  (Kill all queries)"
+  echo "  query:"
+  echo "    all     - View all running queries"
+  echo "    long    - Queries running for longer than five minutes"
+  echo "    kill    - Kill query by pid"
+  echo "    killall - Kill all queries"
   echo
-  echo "  index"
-  echo "    - info     (Show general usage)"
-  echo "    - missing  (Missing indexes)"
-  echo "    - unused   (Unused indexed)"
+  echo "  index:"
+  echo "    usage   - Show general usage"
+  echo "    missing - Missing indexes"
+  echo "    unused  - Unused indexed"
   echo
-  echo "  space        (Show largest tables and indexes)"
-  echo
-  echo "  cache"
-  echo "    - index    (Index hit rate)"
-  echo "    - table    (Table hit rate)"
-  echo
-  echo "  install      (Install pghero)"
-  echo "  uninstall    (Uninstall pghero)"
+  echo "  cache:"
+  echo "    index   - Index hit rate"
+  echo "    table   - Table hit rate"
   echo
   echo "Note: all additional parameters are passed on to psql"
   echo
+  echo "EXAMPLES:"
+  echo
+  echo "  > pghero install -W"
+  echo "  > pghero query all"
+  echo "  > pghero space -d <database> -U <user>"
+  echo
+}
+
+_invalid_sub () {
+  echo "'$1' is not a valid command" >&2
+  sub_help
+  exit 1
 }
 
 _exec_and_display () {
@@ -47,160 +62,91 @@ sub_uninstall () {
 }
 
 # QUERY
-sub_query_running () {
-  local query="SELECT * FROM pghero_running_queries;"
-  _exec_and_display "$query" $@
-}
-
-sub_query_long_running () {
-  local query="SELECT * FROM pghero_long_running_queries;"
-  _exec_and_display "$query" $@
-}
-
-sub_query_kill () {
-  local query_pid=$1
-  if ! [ "$(echo $query_pid | grep "^[ [:digit:] ]*$")" ]; then
-    echo "'$query_pid' is not a valid pid"
-    exit 1
-  fi
-  local query="SELECT pghero_kill(${query_pid});"
-  _exec_and_display "$query" $@
-}
-
-sub_query_killall () {
-  local query="SELECT pghero_kill_all();"
-  _exec_and_display "$query" $@
-}
-
 sub_query () {
-  local s_cmd=$1
-  case $s_cmd in
+  local sub=$1
+  shift
+  case $sub in
     "a" | "all")
-      shift
-      sub_query_running $@
+      _exec_and_display "SELECT * FROM pghero_running_queries;" $@
       ;;
     "l" | "long")
-      shift
-      sub_query_long_running $@
+      _exec_and_display "SELECT * FROM pghero_long_running_queries;" $@
       ;;
     "k" | "kill")
+      local query_pid=$1
+      if ! [ "$(echo $query_pid | grep "^[ [:digit:] ]*$")" ]; then
+        echo "'$query_pid' is not a valid pid"
+        exit 1
+      fi
       shift
-      sub_query_kill $@
+      _exec_and_display "SELECT pghero_kill(${query_pid});" $@
       ;;
     "ka" | "killall")
-      shift
-      sub_query_killall $@
+      _exec_and_display "SELECT pghero_kill_all();" $@
       ;;
     *)
-      echo "'$s_cmd' is not a valid subcommand"
-      sub_help
+      _invalid_sub "$sub"
       ;;
   esac
 }
 
 # INDEX
-sub_index_info () {
-  local query="SELECT * FROM pghero_index_usage;"
-  _exec_and_display "$query" $@
-}
-
-sub_index_missing () {
-  local query="SELECT * FROM pghero_missing_indexes;"
-  _exec_and_display "$query" $@
-}
-
-sub_index_unused () {
-  local query="SELECT * FROM pghero_unused_indexes;"
-  _exec_and_display "$query" $@
-}
-
 sub_index () {
-  local s_cmd=$1
-  case $s_cmd in
-    "i" | "info")
-      shift
-      sub_index_info $@
+  local sub=$1
+  shift
+  case $sub in
+    "u" | "usage")
+      _exec_and_display "SELECT * FROM pghero_index_usage;" $@
       ;;
     "m" | "missing")
-      shift
-      sub_index_missing
+      _exec_and_display "SELECT * FROM pghero_missing_indexes;" $@
       ;;
-    "u" | "unused")
-      shift
-      sub_index
+    "un" | "unused")
+      _exec_and_display "SELECT * FROM pghero_unused_indexes;" $@
       ;;
     *)
-      echo "'$s_cmd' is not a valid command"
-      sub_help
+      _invalid_sub "$sub"
       ;;
   esac
 }
 
 # SPACE 
 sub_space () {
-  local query="SELECT * FROM pghero_relation_sizes;"
-  _exec_and_display "$query" $@
+  _exec_and_display "SELECT * FROM pghero_relation_sizes;" $@
 }
 
 # CACHE
-sub_cache_index () {
-  local query="SELECT pghero_index_hit_rate();"
-  _exec_and_display "$query" $@
-}
-
-sub_cache_table () {
-  local query="SELECT pghero_table_hit_rate();"
-  _exec_and_display "$query" $@
-}
-
 sub_cache () {
-  local s_cmd=$1
-  case $s_cmd in
+  local sub=$1
+  shift
+  case $sub in
     "i" | "index")
-      shift
-      sub_cache_index $@
+      _exec_and_display "SELECT pghero_index_hit_rate();" $@
       ;;
     "t" | "table")
-      shift
-      sub_cache_table $@
+      _exec_and_display "SELECT pghero_table_hit_rate();" $@
       ;;
     *)
-      echo "'$s_cmd' is not a valid command"
-      sub_help
+      _invalid_sub "$sub"
   esac
 }
 
-s_cmd=$1
-case $s_cmd in
-  "" | "h" | "help")
-    sub_help
-    ;;
-  "q" | "query" | "queries")
-    shift
-    sub_query $@
-    ;;
-  "s" | "space")
-    shift
-    sub_space $@
-    ;;
-  "i" | "index")
-    shift
-    sub_index $@
-    ;;
-  "c" | "cache")
-    shift
-    sub_cache $@
-    ;;
-  "install")
-    shift
-    sub_install $@
-    ;;
-  "uninstall")
-    shift
-    sub_uninstall $@
-    ;;
-  *)
-    echo "'$s_cmd' is not a valid command"
-    sub_help
-    ;;
-esac
+# MAIN
+_main () {
+  local sub=$1
+  case $sub in
+    "" | "h" | "-h" | "help" | "--help")
+      sub_help
+      ;;
+    *)
+      shift
+      if type sub_${sub} | grep -i function > /dev/null; then
+        sub_${sub} $@
+      else
+        _invalid_sub $sub
+      fi
+      ;;
+  esac
+}
+
+_main $@
